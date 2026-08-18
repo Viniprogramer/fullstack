@@ -650,6 +650,11 @@ function PropertyPage() {
       return;
     }
 
+    if (!p) {
+  setError("Imóvel não encontrado.");
+  return;
+}
+
     try {
       await api.createBooking({
         propertyId: p.id,
