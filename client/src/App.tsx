@@ -37,12 +37,179 @@ type AuthCtx = {
   setUser: (u: UserType | null) => void;
 };
 
+type Locale = "en" | "pt-BR";
+
+const copy = {
+  en: {
+    explore: "Explore",
+    about: "About",
+    help: "Help",
+    favorites: "Favorites",
+    myBookings: "My bookings",
+    hostPanel: "Host panel",
+    logout: "Logout",
+    login: "Sign in",
+    closeMenu: "Close menu",
+    openMenu: "Open menu",
+    staylyAccount: "Stayly account",
+    heroEyebrow: "STAYS YOU WILL REMEMBER",
+    heroTitleA: "Your next stay",
+    heroTitleB: "starts here.",
+    heroText: "Homes, apartments, and unique escapes tailored to your trip.",
+    where: "Where?",
+    wherePlaceholder: "City or destination",
+    when: "When?",
+    guests: "Guests",
+    checkIn: "Check-in",
+    checkOut: "Check-out",
+    search: "Search",
+    chooseStyle: "CHOOSE YOUR STYLE",
+    findRight: "Find the right place.",
+    seeAll: "See all",
+    browseStays: "Browse stays",
+    topEyebrow: "MOST WANTED",
+    topTitle: "Stay in special places.",
+    topText: "Curated for a memorable experience.",
+    forHosts: "FOR HOSTS",
+    hostTitleA: "Your place can",
+    hostTitleB: "be the next favorite.",
+    hostText: "Publish your property, receive guests, and manage everything in one place.",
+    startHosting: "Start hosting",
+    findDestination: "Find your next destination.",
+    placesAvailable: "places available",
+    filters: "Filters",
+    searchPlaceholder: "Search city, region, or property...",
+    sourceHybrid: "Hybrid search (real + local)",
+    sourceReal: "Real hotels only",
+    sourceLocal: "Local catalog only",
+    allCategories: "All categories",
+    minPrice: "Min price",
+    maxPrice: "Max price",
+    newest: "Newest",
+    lowestPrice: "Lowest price",
+    highestPrice: "Highest price",
+    bestRating: "Best rating",
+    apply: "Apply",
+    loadingStays: "Loading stays...",
+    noResultsTitle: "No properties found",
+    noResultsText: "Try another destination or remove some filters.",
+    previous: "Previous",
+    next: "Next",
+    pageOf: "Page",
+    of: "of",
+    authVisualTitleA: "Travel more.",
+    authVisualTitleB: "Plan less.",
+    authVisualText: "A complete experience to find, book, and manage your next stays.",
+    welcomeBack: "Welcome back.",
+    createAccount: "Create your account.",
+    continueJourney: "Sign in to continue your journey.",
+    discoverPlaces: "Start discovering amazing places.",
+    name: "Name",
+    email: "Email",
+    password: "Password",
+    createNow: "Create now",
+    alreadyAccount: "Already have an account? ",
+    noAccount: "Don't have an account yet? ",
+    demo: "Demo",
+    sourceExternal: "External integration",
+  },
+  "pt-BR": {
+    explore: "Explorar",
+    about: "Sobre",
+    help: "Ajuda",
+    favorites: "Favoritos",
+    myBookings: "Minhas reservas",
+    hostPanel: "Painel do anfitrião",
+    logout: "Sair",
+    login: "Entrar",
+    closeMenu: "Fechar menu",
+    openMenu: "Abrir menu",
+    staylyAccount: "Conta Stayly",
+    heroEyebrow: "ESTADIAS QUE VOCÊ VAI LEMBRAR",
+    heroTitleA: "Seu próximo lugar",
+    heroTitleB: "começa aqui.",
+    heroText: "Casas, apartamentos e refúgios únicos para viver o destino do seu jeito.",
+    where: "Onde?",
+    wherePlaceholder: "Cidade ou destino",
+    when: "Quando?",
+    guests: "Hóspedes",
+    checkIn: "Check-in",
+    checkOut: "Check-out",
+    search: "Buscar",
+    chooseStyle: "ESCOLHA SEU ESTILO",
+    findRight: "Encontre o lugar certo.",
+    seeAll: "Ver todos",
+    browseStays: "Explorar estadias",
+    topEyebrow: "MAIS PROCURADOS",
+    topTitle: "Fique em lugares especiais.",
+    topText: "Selecionados para uma experiência memorável.",
+    forHosts: "PARA ANFITRIÕES",
+    hostTitleA: "Seu espaço pode",
+    hostTitleB: "ser o próximo favorito.",
+    hostText: "Publique seu imóvel, receba hóspedes e acompanhe tudo em um só lugar.",
+    startHosting: "Começar a hospedar",
+    findDestination: "Encontre seu próximo destino.",
+    placesAvailable: "lugares disponíveis",
+    filters: "Filtros",
+    searchPlaceholder: "Busque cidade, região ou imóvel...",
+    sourceHybrid: "Busca híbrida (real + local)",
+    sourceReal: "Somente hotéis reais",
+    sourceLocal: "Somente catálogo local",
+    allCategories: "Todas categorias",
+    minPrice: "Preço min",
+    maxPrice: "Preço max",
+    newest: "Mais recentes",
+    lowestPrice: "Menor preço",
+    highestPrice: "Maior preço",
+    bestRating: "Melhor avaliação",
+    apply: "Aplicar",
+    loadingStays: "Carregando estadias...",
+    noResultsTitle: "Nenhum imóvel encontrado",
+    noResultsText: "Tente outro destino ou remova alguns filtros.",
+    previous: "Anterior",
+    next: "Próxima",
+    pageOf: "Página",
+    of: "de",
+    authVisualTitleA: "Viaje mais.",
+    authVisualTitleB: "Planeje menos.",
+    authVisualText: "Uma experiência completa para encontrar, reservar e gerenciar suas próximas estadias.",
+    welcomeBack: "Bem-vindo de volta.",
+    createAccount: "Crie sua conta.",
+    continueJourney: "Entre para continuar sua jornada.",
+    discoverPlaces: "Comece a descobrir lugares incríveis.",
+    name: "Nome",
+    email: "E-mail",
+    password: "Senha",
+    createNow: "Criar agora",
+    alreadyAccount: "Já tem uma conta? ",
+    noAccount: "Ainda não tem conta? ",
+    demo: "Demo",
+    sourceExternal: "Integração externa",
+  },
+} as const;
+
+type LocaleCtx = {
+  locale: Locale;
+  setLocale: (value: Locale) => void;
+  t: (typeof copy)["en"];
+};
+
 const AuthContext = createContext<AuthCtx>({ user: null, setUser: () => {} });
 const useAuth = () => useContext(AuthContext);
+const LocaleContext = createContext<LocaleCtx>({ locale: "en", setLocale: () => {}, t: copy.en });
+const useLocale = () => useContext(LocaleContext);
 
 function App() {
   const [user, setUser] = useState<UserType | null>(null);
   const [ready, setReady] = useState(false);
+  const [locale, setLocale] = useState<Locale>(() => {
+    const saved = localStorage.getItem("stayly_locale");
+    return saved === "pt-BR" ? "pt-BR" : "en";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("stayly_locale", locale);
+  }, [locale]);
 
   useEffect(() => {
     api.me()
@@ -54,11 +221,13 @@ function App() {
   if (!ready) return <Splash />;
 
   return (
-    <AuthContext.Provider value={{ user, setUser }}>
-      <Routes>
-        <Route path="*" element={<Site />} />
-      </Routes>
-    </AuthContext.Provider>
+    <LocaleContext.Provider value={{ locale, setLocale, t: copy[locale] }}>
+      <AuthContext.Provider value={{ user, setUser }}>
+        <Routes>
+          <Route path="*" element={<Site />} />
+        </Routes>
+      </AuthContext.Provider>
+    </LocaleContext.Provider>
   );
 }
 
@@ -93,6 +262,7 @@ function Site() {
 
 function Header() {
   const { user, setUser } = useAuth();
+  const { locale, setLocale, t } = useLocale();
   const [userOpen, setUserOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const nav = useNavigate();
@@ -117,14 +287,24 @@ function Header() {
         </Link>
 
         <nav className="top-nav">
-          <NavLink to="/explorar">Explorar</NavLink>
-          <a href="/#sobre">Sobre</a>
-          <a href="/#ajuda">Ajuda</a>
+          <NavLink to="/explorar">{t.explore}</NavLink>
+          <a href="/#sobre">{t.about}</a>
+          <a href="/#ajuda">{t.help}</a>
         </nav>
 
         <div className="header-actions">
+          <select
+            className="lang-select"
+            value={locale}
+            onChange={(e) => setLocale(e.target.value as Locale)}
+            aria-label="Language"
+          >
+            <option value="en">EN</option>
+            <option value="pt-BR">PT-BR</option>
+          </select>
+
           <Link to="/favoritos" className="head-link desktop-favorite">
-            <Heart /> Favoritos
+            <Heart /> {t.favorites}
           </Link>
 
           {user ? (
@@ -138,27 +318,27 @@ function Header() {
               {userOpen && (
                 <div className="dropdown">
                   <Link to="/reservas" onClick={() => setUserOpen(false)}>
-                    <CalendarCheck /> Minhas reservas
+                    <CalendarCheck /> {t.myBookings}
                   </Link>
                   <Link to="/host" onClick={() => setUserOpen(false)}>
-                    <Building2 /> Painel do anfitrião
+                    <Building2 /> {t.hostPanel}
                   </Link>
                   <button onClick={logout}>
-                    <LogOut /> Sair
+                    <LogOut /> {t.logout}
                   </button>
                 </div>
               )}
             </div>
           ) : (
             <Link className="host-link desktop-login" to="/login">
-              Entrar
+              {t.login}
             </Link>
           )}
 
           <button
             className="mobile-toggle"
             type="button"
-            aria-label={mobileOpen ? "Fechar menu" : "Abrir menu"}
+            aria-label={mobileOpen ? t.closeMenu : t.openMenu}
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((v) => !v)}
           >
@@ -171,17 +351,17 @@ function Header() {
         <div className="mobile-menu" role="dialog" aria-label="Menu de navegação">
           <nav className="mobile-menu-nav">
             <NavLink to="/explorar" onClick={closeMobile}>
-              Explorar
+              {t.explore}
             </NavLink>
             <a href="/#sobre" onClick={closeMobile}>
-              Sobre
+              {t.about}
             </a>
             <a href="/#ajuda" onClick={closeMobile}>
-              Ajuda
+              {t.help}
             </a>
 
             <Link to="/favoritos" onClick={closeMobile}>
-              <Heart /> Favoritos
+              <Heart /> {t.favorites}
             </Link>
 
             {user ? (
@@ -190,25 +370,25 @@ function Header() {
                   <img src={user.avatar} alt={user.name} />
                   <div>
                     <strong>{user.name}</strong>
-                    <small>Conta Stayly</small>
+                    <small>{t.staylyAccount}</small>
                   </div>
                 </div>
 
                 <Link to="/reservas" onClick={closeMobile}>
-                  <CalendarCheck /> Minhas reservas
+                  <CalendarCheck /> {t.myBookings}
                 </Link>
 
                 <Link to="/host" onClick={closeMobile}>
-                  <Building2 /> Painel do anfitrião
+                  <Building2 /> {t.hostPanel}
                 </Link>
 
                 <button type="button" onClick={logout}>
-                  <LogOut /> Sair
+                  <LogOut /> {t.logout}
                 </button>
               </>
             ) : (
               <Link className="mobile-login" to="/login" onClick={closeMobile}>
-                Entrar
+                {t.login}
                 <ChevronRight />
               </Link>
             )}
@@ -370,8 +550,12 @@ function Header() {
 }
 
 function HomePage() {
+  const { t } = useLocale();
   const nav = useNavigate();
   const [q, setQ] = useState("");
+  const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
+  const [guests, setGuests] = useState("2");
   const [props, setProps] = useState<Property[]>([]);
 
   useEffect(() => {
@@ -380,7 +564,12 @@ function HomePage() {
 
   function search(e: React.FormEvent) {
     e.preventDefault();
-    nav(`/explorar${q ? `?q=${encodeURIComponent(q)}` : ""}`);
+    const params = new URLSearchParams();
+    if (q.trim()) params.set("q", q.trim());
+    if (checkIn) params.set("checkIn", checkIn);
+    if (checkOut) params.set("checkOut", checkOut);
+    if (guests) params.set("guests", guests);
+    nav(`/explorar${params.toString() ? `?${params.toString()}` : ""}`);
   }
 
   return (
@@ -388,38 +577,43 @@ function HomePage() {
       <section className="hero">
         <div className="hero-overlay" />
         <div className="hero-inner">
-          <span className="eyebrow">ESTADIAS QUE VOCÊ VAI LEMBRAR</span>
+          <span className="eyebrow">{t.heroEyebrow}</span>
           <h1>
-            Seu próximo lugar
+            {t.heroTitleA}
             <br />
-            <i>começa aqui.</i>
+            <i>{t.heroTitleB}</i>
           </h1>
-          <p>
-            Casas, apartamentos e refúgios únicos para viver o destino do seu jeito.
-          </p>
+          <p>{t.heroText}</p>
 
           <form className="search-box" onSubmit={search}>
             <div>
               <MapPin />
-              <label>Onde?</label>
+              <label>{t.where}</label>
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Cidade ou destino"
+                placeholder={t.wherePlaceholder}
               />
             </div>
             <div>
               <CalendarDays />
-              <label>Quando?</label>
-              <span>Escolha as datas</span>
+              <label>{t.when}</label>
+              <div className="hero-date-range">
+                <input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} />
+                <input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} />
+              </div>
             </div>
             <div>
               <Users />
-              <label>Hóspedes</label>
-              <span>2 hóspedes</span>
+              <label>{t.guests}</label>
+              <select value={guests} onChange={(e) => setGuests(e.target.value)}>
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                  <option key={n} value={String(n)}>{n}</option>
+                ))}
+              </select>
             </div>
             <button>
-              <Search /> Buscar
+              <Search /> {t.search}
             </button>
           </form>
         </div>
@@ -428,11 +622,11 @@ function HomePage() {
       <section className="section">
         <div className="section-head">
           <div>
-            <span className="kicker">ESCOLHA SEU ESTILO</span>
-            <h2>Encontre o lugar certo.</h2>
+            <span className="kicker">{t.chooseStyle}</span>
+            <h2>{t.findRight}</h2>
           </div>
           <Link to="/explorar">
-            Ver todos <ArrowRight />
+            {t.seeAll} <ArrowRight />
           </Link>
         </div>
 
@@ -441,7 +635,7 @@ function HomePage() {
             <button key={x} onClick={() => nav(`/explorar?category=${x}`)}>
               <img src={images[i]} alt={x} />
               <b>{x}</b>
-              <small>Explorar estadias</small>
+              <small>{t.browseStays}</small>
             </button>
           ))}
         </div>
@@ -450,12 +644,12 @@ function HomePage() {
       <section className="section light">
         <div className="section-head">
           <div>
-            <span className="kicker">MAIS PROCURADOS</span>
-            <h2>Fique em lugares especiais.</h2>
-            <p>Selecionados para uma experiência memorável.</p>
+            <span className="kicker">{t.topEyebrow}</span>
+            <h2>{t.topTitle}</h2>
+            <p>{t.topText}</p>
           </div>
           <Link to="/explorar">
-            Explorar <ArrowRight />
+            {t.explore} <ArrowRight />
           </Link>
         </div>
 
@@ -471,17 +665,15 @@ function HomePage() {
 
       <section className="host-banner" id="sobre">
         <div>
-          <span className="kicker">PARA ANFITRIÕES</span>
+          <span className="kicker">{t.forHosts}</span>
           <h2>
-            Seu espaço pode
+            {t.hostTitleA}
             <br />
-            <i>ser o próximo favorito.</i>
+            <i>{t.hostTitleB}</i>
           </h2>
-          <p>
-            Publique seu imóvel, receba hóspedes e acompanhe tudo em um só lugar.
-          </p>
+          <p>{t.hostText}</p>
           <Link to="/host">
-            Começar a hospedar <ArrowRight />
+            {t.startHosting} <ArrowRight />
           </Link>
         </div>
         <img src={images[4]} alt="Imóvel Stayly" />
@@ -491,6 +683,7 @@ function HomePage() {
 }
 
 function Explore() {
+  const { t } = useLocale();
   const [props, setProps] = useState<Property[]>([]);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
@@ -548,23 +741,26 @@ function Explore() {
     const params = new URLSearchParams(window.location.search);
     setQ(params.get("q") || "");
     setCategory(params.get("category") || "");
+    setCheckIn(params.get("checkIn") || "");
+    setCheckOut(params.get("checkOut") || "");
+    setGuests(params.get("guests") || "");
   }, []);
 
   useEffect(() => {
     fetchProperties(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, category, sort, source]);
+  }, [q, category, sort, source, checkIn, checkOut, guests]);
 
   return (
     <main className="page">
       <div className="explore-head">
         <div>
           <span className="kicker">EXPLORE</span>
-          <h1>Encontre seu próximo destino.</h1>
-          <p>{total} lugares disponíveis</p>
+          <h1>{t.findDestination}</h1>
+          <p>{total} {t.placesAvailable}</p>
         </div>
         <button className="filter-btn">
-          <SlidersHorizontal /> Filtros
+          <SlidersHorizontal /> {t.filters}
         </button>
       </div>
 
@@ -573,26 +769,26 @@ function Explore() {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Busque cidade, região ou imóvel..."
+          placeholder={t.searchPlaceholder}
         />
         <button
           onClick={() => {
             fetchProperties(1);
           }}
         >
-          Buscar
+          {t.search}
         </button>
       </div>
 
       <div className="explore-filters">
         <select value={source} onChange={(e) => setSource(e.target.value as PropertySearchParams["source"])}>
-          <option value="hybrid">Busca híbrida (real + local)</option>
-          <option value="real">Somente hotéis reais</option>
-          <option value="local">Somente catálogo local</option>
+          <option value="hybrid">{t.sourceHybrid}</option>
+          <option value="real">{t.sourceReal}</option>
+          <option value="local">{t.sourceLocal}</option>
         </select>
 
         <select value={category} onChange={(e) => setCategory(e.target.value)}>
-          <option value="">Todas categorias</option>
+          <option value="">{t.allCategories}</option>
           <option value="Praia">Praia</option>
           <option value="Campo">Campo</option>
           <option value="Urbano">Urbano</option>
@@ -602,7 +798,7 @@ function Explore() {
         <input
           type="number"
           min="0"
-          placeholder="Preço min"
+          placeholder={t.minPrice}
           value={minPrice}
           onChange={(e) => setMinPrice(e.target.value)}
         />
@@ -610,7 +806,7 @@ function Explore() {
         <input
           type="number"
           min="0"
-          placeholder="Preço max"
+          placeholder={t.maxPrice}
           value={maxPrice}
           onChange={(e) => setMaxPrice(e.target.value)}
         />
@@ -618,7 +814,7 @@ function Explore() {
         <input
           type="number"
           min="1"
-          placeholder="Hóspedes"
+          placeholder={t.guests}
           value={guests}
           onChange={(e) => setGuests(e.target.value)}
         />
@@ -636,13 +832,13 @@ function Explore() {
         />
 
         <select value={sort} onChange={(e) => setSort(e.target.value as PropertySearchParams["sort"])}>
-          <option value="newest">Mais recentes</option>
-          <option value="price_asc">Menor preço</option>
-          <option value="price_desc">Maior preço</option>
-          <option value="rating_desc">Melhor avaliação</option>
+          <option value="newest">{t.newest}</option>
+          <option value="price_asc">{t.lowestPrice}</option>
+          <option value="price_desc">{t.highestPrice}</option>
+          <option value="rating_desc">{t.bestRating}</option>
         </select>
 
-        <button onClick={() => fetchProperties(1)}>Aplicar</button>
+        <button onClick={() => fetchProperties(1)}>{t.apply}</button>
       </div>
 
       {error && <div className="error-banner">{error}</div>}
@@ -655,7 +851,7 @@ function Explore() {
       )}
 
       {loading ? (
-        <div className="loading">Carregando estadias...</div>
+        <div className="loading">{t.loadingStays}</div>
       ) : props.length ? (
         <div className="property-grid">
           {props.map((p) => (
@@ -664,18 +860,18 @@ function Explore() {
         </div>
       ) : (
         <Empty
-          title="Nenhum imóvel encontrado"
-          text="Tente outro destino ou remova alguns filtros."
+          title={t.noResultsTitle}
+          text={t.noResultsText}
         />
       )}
 
       <div className="pagination-row">
         <button disabled={page <= 1 || loading} onClick={() => fetchProperties(page - 1)}>
-          Anterior
+          {t.previous}
         </button>
-        <span>Página {page} de {totalPages}</span>
+        <span>{t.pageOf} {page} {t.of} {totalPages}</span>
         <button disabled={page >= totalPages || loading} onClick={() => fetchProperties(page + 1)}>
-          Próxima
+          {t.next}
         </button>
       </div>
     </main>
@@ -684,6 +880,7 @@ function Explore() {
 
 function PropertyCard({ property }: { property: Property }) {
   const { user } = useAuth();
+  const { t } = useLocale();
   const [fav, setFav] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -714,7 +911,7 @@ function PropertyCard({ property }: { property: Property }) {
           disabled={busy || isReal}
           className={fav ? "liked" : ""}
           aria-label="Favoritar imóvel"
-          title={isReal ? "Resultados externos não podem ser favoritados" : "Favoritar imóvel"}
+          title={isReal ? "External results cannot be favorited" : "Favorite property"}
         >
           {fav ? <Heart fill="currentColor" /> : <Heart />}
         </button>
@@ -738,7 +935,7 @@ function PropertyCard({ property }: { property: Property }) {
           <span>
             A partir de <strong>{money(property.price)}</strong> / noite
           </span>
-          <small>{isReal ? "Integração externa" : `${property.reviews} avaliações`}</small>
+          <small>{isReal ? t.sourceExternal : `${property.reviews} avaliações`}</small>
         </div>
       </div>
     </>
@@ -947,6 +1144,7 @@ function PropertyPage() {
 
 function AuthPage({ mode }: { mode: "login" | "register" }) {
   const { setUser } = useAuth();
+  const { locale, setLocale, t } = useLocale();
   const nav = useNavigate();
   const [form, setForm] = useState({
     name: "",
@@ -978,44 +1176,53 @@ function AuthPage({ mode }: { mode: "login" | "register" }) {
       <div className="auth-visual">
         <span className="eyebrow">STAYLY</span>
         <h1>
-          Viaje mais.
+          {t.authVisualTitleA}
           <br />
-          <i>Planeje menos.</i>
+          <i>{t.authVisualTitleB}</i>
         </h1>
-        <p>
-          Uma experiência completa para encontrar, reservar e gerenciar suas
-          próximas estadias.
-        </p>
+        <p>{t.authVisualText}</p>
       </div>
 
       <form className="auth-form" onSubmit={submit}>
+        <div className="auth-lang-row">
+          <select
+            className="lang-select"
+            value={locale}
+            onChange={(e) => setLocale(e.target.value as Locale)}
+            aria-label="Language"
+          >
+            <option value="en">EN</option>
+            <option value="pt-BR">PT-BR</option>
+          </select>
+        </div>
+
         <Link to="/" className="brand dark">
           <span>S</span>stayly
         </Link>
 
-        <h2>{mode === "login" ? "Bem-vindo de volta." : "Crie sua conta."}</h2>
+        <h2>{mode === "login" ? t.welcomeBack : t.createAccount}</h2>
         <p>
           {mode === "login"
-            ? "Entre para continuar sua jornada."
-            : "Comece a descobrir lugares incríveis."}
+            ? t.continueJourney
+            : t.discoverPlaces}
         </p>
 
         {mode === "register" && (
           <Field
-            label="Nome"
+            label={t.name}
             value={form.name}
             onChange={(v) => setForm({ ...form, name: v })}
           />
         )}
 
         <Field
-          label="E-mail"
+          label={t.email}
           value={form.email}
           onChange={(v) => setForm({ ...form, email: v })}
         />
 
         <Field
-          label="Senha"
+          label={t.password}
           value={form.password}
           onChange={(v) => setForm({ ...form, password: v })}
           type="password"
@@ -1024,19 +1231,19 @@ function AuthPage({ mode }: { mode: "login" | "register" }) {
         {error && <div className="error">{error}</div>}
 
         <button className="reserve">
-          {mode === "login" ? "Entrar" : "Criar conta"}
+          {mode === "login" ? t.login : t.createAccount}
         </button>
 
         <small className="switch-auth">
-          {mode === "login" ? "Ainda não tem conta? " : "Já tem uma conta? "}
+          {mode === "login" ? t.noAccount : t.alreadyAccount}
           <Link to={mode === "login" ? "/cadastro" : "/login"}>
-            {mode === "login" ? "Criar agora" : "Entrar"}
+            {mode === "login" ? t.createNow : t.login}
           </Link>
         </small>
 
         {mode === "login" && (
           <div className="demo-login">
-            Demo: <b>demo@stayly.dev</b> · <b>123456</b>
+            {t.demo}: <b>demo@stayly.dev</b> · <b>123456</b>
           </div>
         )}
       </form>

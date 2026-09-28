@@ -83,6 +83,38 @@
 	cursor: not-allowed;
 }
 
+.lang-select {
+	min-height: 34px;
+	padding: 0 10px;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: #fff;
+	font-size: 11px;
+	font-weight: 700;
+}
+
+.auth-lang-row {
+	display: flex;
+	justify-content: flex-end;
+	margin-bottom: 8px;
+}
+
+.hero-date-range {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 6px;
+}
+
+.hero-date-range input {
+	width: 100%;
+	height: 38px;
+	padding: 0 8px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: #fff;
+	font-size: 12px;
+}
+
 @media (max-width: 980px) {
 	.explore-filters {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
