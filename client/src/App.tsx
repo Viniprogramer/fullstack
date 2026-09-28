@@ -191,7 +191,7 @@ const copy = {
 type LocaleCtx = {
   locale: Locale;
   setLocale: (value: Locale) => void;
-  t: (typeof copy)["en"];
+  t: (typeof copy)[Locale];
 };
 
 const AuthContext = createContext<AuthCtx>({ user: null, setUser: () => {} });
