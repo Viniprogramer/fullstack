@@ -128,6 +128,12 @@ type SearchResponse = {
   items: SearchItem[];
 };
 
+const externalHotelHost = {
+  id: "external-provider",
+  name: "External Provider",
+  avatar: "https://i.pravatar.cc/150?img=48",
+};
+
 function buildPropertyOrderBy(sort: z.infer<typeof propertySearchSchema>["sort"]) {
   if (sort === "price_asc") return [{ price: "asc" as const }, { createdAt: "desc" as const }];
   if (sort === "price_desc") return [{ price: "desc" as const }, { createdAt: "desc" as const }];
@@ -210,10 +216,15 @@ async function queryProperties(rawQuery: Record<string, unknown>) {
 
   const warnings: string[] = [];
 
-  async function fetchRealHotels(): Promise<SearchItem[]> {
-    const locationText = [city, state].filter(Boolean).join(", ") || q;
-    if (!locationText) return [];
+  const locationText = [city, state].filter(Boolean).join(", ") || q;
 
+  function paginateItems(items: SearchItem[]) {
+    const offset = (page - 1) * limit;
+    return items.slice(offset, offset + limit);
+  }
+
+  async function geocodeLocation() {
+    if (!locationText) return null;
     const geoRes = await fetch(
       `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(locationText)}`,
       {
@@ -224,15 +235,90 @@ async function queryProperties(rawQuery: Record<string, unknown>) {
       }
     );
 
-    if (!geoRes.ok) {
-      throw new Error("Falha ao localizar cidade para busca real.");
-    }
+    if (!geoRes.ok) throw new Error("Falha ao localizar cidade para busca real.");
+    const geo = (await geoRes.json()) as Array<{ lat: string; lon: string }>;
+    if (!geo.length) return null;
+    return { lat: Number(geo[0].lat), lon: Number(geo[0].lon) };
+  }
 
-    const geo = (await geoRes.json()) as Array<{ lat: string; lon: string; display_name: string }>;
-    if (!geo.length) return [];
+  async function fetchRealHotelsOpenTripMap(): Promise<SearchItem[]> {
+    const apiKey = process.env.OPENTRIPMAP_API_KEY;
+    if (!apiKey) throw new Error("OPENTRIPMAP_API_KEY não configurada.");
+    const point = await geocodeLocation();
+    if (!point) return [];
 
-    const lat = Number(geo[0].lat);
-    const lon = Number(geo[0].lon);
+    const radius = 25000;
+    const scanLimit = Math.max(40, page * limit * 2);
+    const url = new URL("https://api.opentripmap.com/0.1/en/places/radius");
+    url.searchParams.set("radius", String(radius));
+    url.searchParams.set("lon", String(point.lon));
+    url.searchParams.set("lat", String(point.lat));
+    url.searchParams.set("kinds", "accomodations");
+    url.searchParams.set("limit", String(scanLimit));
+    url.searchParams.set("rate", "2");
+    url.searchParams.set("format", "json");
+    url.searchParams.set("apikey", apiKey);
+
+    const res = await fetch(url.toString(), {
+      headers: {
+        "User-Agent": "Stayly/1.0 (contact: viniprogramer)",
+        Accept: "application/json",
+      },
+    });
+
+    if (!res.ok) throw new Error("OpenTripMap indisponível no momento.");
+
+    const places = (await res.json()) as Array<{
+      xid: string;
+      name?: string;
+      kinds?: string;
+      point?: { lat: number; lon: number };
+      rate?: number;
+    }>;
+
+    const mapped: SearchItem[] = places
+      .filter((place) => place.name)
+      .map((place, idx) => {
+        const stars = place.rate ?? 4;
+        const rating = Math.max(3.4, Math.min(5, stars + 0.3));
+        const basePrice = 280 + stars * 110;
+        const mapUrl = place.point
+          ? `https://www.openstreetmap.org/?mlat=${place.point.lat}&mlon=${place.point.lon}#map=16/${place.point.lat}/${place.point.lon}`
+          : `https://www.openstreetmap.org/search?query=${encodeURIComponent(place.name || "hotel")}`;
+
+        return {
+          id: `real-otm-${place.xid}-${idx}`,
+          title: place.name || `Hotel ${idx + 1}`,
+          city: city || q || "Cidade",
+          state: state || "",
+          country: "Brasil",
+          price: Math.round(basePrice),
+          guests: guests ?? 2,
+          bedrooms: 1,
+          beds: 1,
+          rating,
+          reviews: 0,
+          image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1000&q=85",
+          category: "Hotel",
+          description: "Resultado de provedor externo em tempo real (OpenTripMap).",
+          hostId: externalHotelHost.id,
+          createdAt: new Date(),
+          host: externalHotelHost,
+          source: "real",
+          externalUrl: mapUrl,
+        };
+      });
+
+    return paginateItems(mapped);
+  }
+
+  async function fetchRealHotels(): Promise<SearchItem[]> {
+    if (!locationText) return [];
+    const point = await geocodeLocation();
+    if (!point) return [];
+
+    const lat = point.lat;
+    const lon = point.lon;
     const radius = 20000;
     const maxItems = Math.max(20, page * limit);
     const overpassQuery = `[out:json][timeout:25];(node["tourism"="hotel"](around:${radius},${lat},${lon});way["tourism"="hotel"](around:${radius},${lat},${lon});relation["tourism"="hotel"](around:${radius},${lat},${lon}););out center ${maxItems};`;
@@ -290,31 +376,38 @@ async function queryProperties(rawQuery: Record<string, unknown>) {
           description: tags["addr:street"]
             ? `Hotel em ${tags["addr:street"]}. Resultado de provedor externo em tempo real.`
             : "Resultado de provedor externo em tempo real.",
-          hostId: "external-provider",
+          hostId: externalHotelHost.id,
           createdAt: new Date(),
-          host: {
-            id: "external-provider",
-            name: "External Provider",
-            avatar: "https://i.pravatar.cc/150?img=48",
-          },
+          host: externalHotelHost,
           source: "real" as const,
           externalUrl: mapUrl,
         };
       })
       .filter((item) => item.title);
 
-    const offset = (page - 1) * limit;
-    return mapped.slice(offset, offset + limit);
+    return paginateItems(mapped);
   }
 
   let realItems: SearchItem[] = [];
 
   if (source !== "local") {
     try {
-      realItems = await fetchRealHotels();
+      if (process.env.OPENTRIPMAP_API_KEY) {
+        realItems = await fetchRealHotelsOpenTripMap();
+      } else {
+        warnings.push("Configure OPENTRIPMAP_API_KEY para resultados reais mais estáveis.");
+        realItems = await fetchRealHotels();
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Falha na busca externa.";
       warnings.push(message);
+      if (!realItems.length) {
+        try {
+          realItems = await fetchRealHotels();
+        } catch {
+          // Fallback final é mantido apenas com catálogo local.
+        }
+      }
     }
   }
 
