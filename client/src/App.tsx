@@ -964,7 +964,7 @@ function PropertyPage() {
   if (!p)
     return (
       <main className="page">
-        {id ? <div className="loading">Carregando imóvel...</div> : <NotFound />}
+        {id ? <div className="loading">Loading property...</div> : <NotFound />}
       </main>
     );
 
@@ -977,12 +977,12 @@ function PropertyPage() {
     }
 
     if (!dates.in || !dates.out) {
-      setError("Escolha as datas de entrada e saída.");
+      setError("Please select check-in and check-out dates.");
       return;
     }
 
     if (!p) {
-  setError("Imóvel não encontrado.");
+  setError("Property not found.");
   return;
 }
 
@@ -1013,7 +1013,7 @@ function PropertyPage() {
   return (
     <main className="page property-page">
       <Link className="back" to="/explorar">
-        ← Voltar para explorar
+        ← Back to explore
       </Link>
 
       <div className="gallery">
@@ -1041,13 +1041,13 @@ function PropertyPage() {
 
           <div className="facts">
             <span>
-              <Users /> {p.guests} hóspedes
+              <Users /> {p.guests} guests
             </span>
             <span>
-              <Home /> {p.bedrooms} quartos
+              <Home /> {p.bedrooms} bedrooms
             </span>
             <span>
-              <Star fill="currentColor" /> {p.rating} · {p.reviews} avaliações
+              <Star fill="currentColor" /> {p.rating} · {p.reviews} reviews
             </span>
           </div>
 
@@ -1056,8 +1056,8 @@ function PropertyPage() {
           <div className="host">
             <img src={p.host.avatar} alt={p.host.name} />
             <div>
-              <b>Hospedado por {p.host.name}</b>
-              <small>Anfitrião verificado · 4 anos hospedando</small>
+              <b>Hosted by {p.host.name}</b>
+              <small>Verified host · 4 years hosting</small>
             </div>
             <ShieldCheck />
           </div>
@@ -1065,12 +1065,12 @@ function PropertyPage() {
           <p className="description">{p.description}</p>
 
           <div className="amenities">
-            <h2>O que este lugar oferece</h2>
+            <h2>What this place offers</h2>
             <div>
-              <span>Wi-Fi rápido</span>
-              <span>Cozinha completa</span>
-              <span>Ar-condicionado</span>
-              <span>Estacionamento</span>
+              <span>Fast Wi-Fi</span>
+              <span>Full kitchen</span>
+              <span>Air conditioning</span>
+              <span>Parking</span>
             </div>
           </div>
         </article>
@@ -1101,7 +1101,7 @@ function PropertyPage() {
           </div>
 
           <label className="guest-select">
-            HÓSPEDES
+            GUESTS
             <select
               value={guests}
               onChange={(e) => setGuests(Number(e.target.value))}
@@ -1115,10 +1115,10 @@ function PropertyPage() {
           {nights > 0 && (
             <div className="calc">
               <span>
-                {money(p.price)} × {nights} noites
+                {money(p.price)} × {nights} nights
               </span>
               <b>{money(p.price * nights)}</b>
-              <span>Taxa de serviço</span>
+              <span>Service fee</span>
               <b>{money(p.price * nights * 0.08)}</b>
               <hr />
               <strong>Total</strong>
@@ -1133,9 +1133,9 @@ function PropertyPage() {
           )}
 
           <button className="reserve" onClick={book}>
-            Reservar
+            Book now
           </button>
-          <small className="no-charge">Você não será cobrado ainda</small>
+          <small className="no-charge">You will not be charged yet</small>
         </aside>
       </div>
     </main>
@@ -1286,8 +1286,8 @@ function Favorites() {
     return (
       <main className="page">
         <Empty
-          title="Entre para ver seus favoritos"
-          text="Salve lugares especiais e encontre tudo depois."
+          title="Sign in to view your favorites"
+          text="Save special places and find them later."
           action="/login"
         />
       </main>
@@ -1297,9 +1297,9 @@ function Favorites() {
     <main className="page">
       <div className="explore-head">
         <div>
-          <span className="kicker">SUA COLEÇÃO</span>
-          <h1>Favoritos</h1>
-          <p>{p.length} lugares salvos</p>
+          <span className="kicker">YOUR COLLECTION</span>
+          <h1>Favorites</h1>
+          <p>{p.length} saved places</p>
         </div>
       </div>
 
@@ -1311,8 +1311,8 @@ function Favorites() {
         </div>
       ) : (
         <Empty
-          title="Você ainda não salvou nenhum lugar"
-          text="Clique no coração dos imóveis que você gostar."
+          title="You have not saved any place yet"
+          text="Click the heart icon on properties you like."
         />
       )}
     </main>
@@ -1333,8 +1333,8 @@ function Bookings() {
     return (
       <main className="page">
         <Empty
-          title="Faça login para acessar suas reservas"
-          text="Suas viagens aparecerão aqui."
+          title="Sign in to access your bookings"
+          text="Your trips will appear here."
           action="/login"
         />
       </main>
@@ -1344,14 +1344,14 @@ function Bookings() {
     <main className="page">
       <div className="explore-head">
         <div>
-          <span className="kicker">SUAS VIAGENS</span>
-          <h1>Minhas reservas</h1>
-          <p>Acompanhe suas próximas estadias.</p>
+          <span className="kicker">YOUR TRIPS</span>
+          <h1>My bookings</h1>
+          <p>Track your upcoming stays.</p>
         </div>
       </div>
 
       {loading ? (
-        <div className="loading">Carregando reservas...</div>
+        <div className="loading">Loading bookings...</div>
       ) : b.length ? (
         <div className="booking-list">
           {b.map((x) => (
@@ -1367,7 +1367,7 @@ function Bookings() {
                 <small>
                   {new Date(x.checkIn).toLocaleDateString("pt-BR")} →{" "}
                   {new Date(x.checkOut).toLocaleDateString("pt-BR")} ·{" "}
-                  {x.guests} hóspedes
+                  {x.guests} guests
                 </small>
               </div>
               <strong>{money(x.total)}</strong>
@@ -1376,8 +1376,8 @@ function Bookings() {
         </div>
       ) : (
         <Empty
-          title="Você ainda não tem reservas"
-          text="Encontre um lugar especial para sua próxima viagem."
+          title="You do not have any bookings yet"
+          text="Find a special place for your next trip."
           action="/explorar"
         />
       )}
@@ -1399,8 +1399,8 @@ function Host() {
     return (
       <main className="page">
         <Empty
-          title="Entre para acessar o painel"
-          text="Anfitriões gerenciam imóveis e reservas por aqui."
+          title="Sign in to access the dashboard"
+          text="Hosts manage properties and bookings here."
           action="/login"
         />
       </main>
@@ -1409,7 +1409,7 @@ function Host() {
   async function remove(id: string) {
     await api.deleteProperty(id);
     setP((current) => current.filter((x) => x.id !== id));
-    setToast("Imóvel removido");
+    setToast("Property removed");
     setTimeout(() => setToast(""), 1800);
   }
 
@@ -1417,44 +1417,44 @@ function Host() {
     <main className="page">
       <div className="dashboard-title">
         <div>
-          <span className="kicker">ANFITRIÃO</span>
-          <h1>Seu espaço.</h1>
-          <p>Gerencie seus imóveis e acompanhe sua operação.</p>
+          <span className="kicker">HOST</span>
+          <h1>Your space.</h1>
+          <p>Manage your properties and monitor your operation.</p>
         </div>
 
         <button className="reserve small-btn" onClick={() => setOpen(true)}>
-          <Plus /> Novo imóvel
+          <Plus /> New property
         </button>
       </div>
 
       <div className="host-stats">
         <div>
-          <small>Receita este mês</small>
+          <small>Revenue this month</small>
           <b>R$ 12.840</b>
           <span>+18,4%</span>
         </div>
         <div>
-          <small>Reservas</small>
+          <small>Bookings</small>
           <b>24</b>
           <span>+9,2%</span>
         </div>
         <div>
-          <small>Ocupação</small>
+          <small>Occupancy</small>
           <b>78%</b>
           <span>+6,1%</span>
         </div>
         <div>
-          <small>Avaliação</small>
+          <small>Rating</small>
           <b>4,9</b>
-          <span>Excelente</span>
+          <span>Excellent</span>
         </div>
       </div>
 
       <div className="host-section">
         <div className="section-head">
           <div>
-            <span className="kicker">SEUS IMÓVEIS</span>
-            <h2>Propriedades</h2>
+            <span className="kicker">YOUR PROPERTIES</span>
+            <h2>Properties</h2>
           </div>
         </div>
 
@@ -1468,8 +1468,9 @@ function Host() {
                   {x.city}, {x.state}
                 </small>
                 <span>{money(x.price)} / noite</span>
+                <span>{money(x.price)} / night</span>
               </div>
-              <button onClick={() => remove(x.id)} aria-label="Excluir imóvel">
+              <button onClick={() => remove(x.id)} aria-label="Delete property">
                 <Trash2 />
               </button>
             </div>
@@ -1536,45 +1537,45 @@ function HostModal({
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="modal-head">
-          <h2>Novo imóvel</h2>
-          <button type="button" onClick={onClose} aria-label="Fechar">
+          <h2>New property</h2>
+          <button type="button" onClick={onClose} aria-label="Close">
             <X />
           </button>
         </div>
 
         <Field
-          label="Título"
+          label="Title"
           value={f.title}
           onChange={(v) => setF({ ...f, title: v })}
         />
 
         <div className="two-fields">
           <Field
-            label="Cidade"
+            label="City"
             value={f.city}
             onChange={(v) => setF({ ...f, city: v })}
           />
           <Field
-            label="Estado"
+            label="State"
             value={f.state}
             onChange={(v) => setF({ ...f, state: v })}
           />
         </div>
 
         <Field
-          label="Preço por noite"
+          label="Price per night"
           value={f.price}
           onChange={(v) => setF({ ...f, price: v })}
           type="number"
         />
 
         <Field
-          label="Descrição"
+          label="Description"
           value={f.description}
           onChange={(v) => setF({ ...f, description: v })}
         />
 
-        <button className="reserve">Publicar imóvel</button>
+        <button className="reserve">Publish property</button>
       </form>
     </div>
   );
@@ -1597,7 +1598,7 @@ function Empty({
         <p>{text}</p>
         {action && (
           <Link className="reserve" to={action}>
-            Continuar
+            Continue
           </Link>
         )}
       </div>
@@ -1609,8 +1610,8 @@ function NotFound() {
   return (
     <main className="page">
       <Empty
-        title="Página não encontrada"
-        text="O endereço que você acessou não existe."
+        title="Page not found"
+        text="The address you entered does not exist."
         action="/"
       />
     </main>
@@ -1624,29 +1625,29 @@ function Footer() {
         <Link className="brand" to="/">
           <span>S</span>stayly
         </Link>
-        <p>Experiências únicas, lugares especiais.</p>
+        <p>Unique experiences, special places.</p>
       </div>
 
       <div>
-        <b>Explorar</b>
-        <Link to="/explorar">Destinos</Link>
-        <Link to="/favoritos">Favoritos</Link>
-        <Link to="/reservas">Viagens</Link>
+        <b>Explore</b>
+        <Link to="/explorar">Destinations</Link>
+        <Link to="/favoritos">Favorites</Link>
+        <Link to="/reservas">Trips</Link>
       </div>
 
       <div>
-        <b>Para anfitriões</b>
-        <Link to="/host">Hospede seu espaço</Link>
-        <a href="/#sobre">Como funciona</a>
+        <b>For hosts</b>
+        <Link to="/host">Host your place</Link>
+        <a href="/#sobre">How it works</a>
       </div>
 
       <div>
         <b>Stayly</b>
-        <a href="/#sobre">Sobre</a>
-        <a href="/#ajuda">Ajuda</a>
+        <a href="/#sobre">About</a>
+        <a href="/#ajuda">Help</a>
       </div>
 
-      <small>© 2026 Stayly. Projeto demonstrativo de portfólio.</small>
+      <small>© 2026 Stayly. Portfolio demo project.</small>
     </footer>
   );
 }
