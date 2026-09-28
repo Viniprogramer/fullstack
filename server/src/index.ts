@@ -11,9 +11,25 @@ export const app = express();
 const PORT = Number(process.env.PORT || 4000);
 const SECRET = process.env.JWT_SECRET || "stayly-dev-secret";
 
+const explicitAllowedOrigins = new Set([
+  process.env.CLIENT_URL || "",
+  "http://localhost:5173",
+  "http://localhost:4173",
+  "https://fullstack-client-five.vercel.app",
+]);
+
+const previewOriginPattern = /^https:\/\/fullstack-client-[a-z0-9-]+-viniprogramers-projects\.vercel\.app$/i;
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin(origin, callback) {
+      // Allow non-browser requests (curl, server-to-server) without an Origin header.
+      if (!origin) return callback(null, true);
+      if (explicitAllowedOrigins.has(origin) || previewOriginPattern.test(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Origin not allowed by CORS"));
+    },
   })
 );
 app.use(express.json());
