@@ -62,6 +62,94 @@ const propertyInclude = {
   },
 };
 
+const propertySearchSchema = z.object({
+  q: z.string().trim().optional(),
+  category: z.string().trim().optional(),
+  city: z.string().trim().optional(),
+  state: z.string().trim().optional(),
+  minPrice: z.coerce.number().nonnegative().optional(),
+  maxPrice: z.coerce.number().nonnegative().optional(),
+  guests: z.coerce.number().int().positive().optional(),
+  minRating: z.coerce.number().min(0).max(5).optional(),
+  sort: z.enum(["newest", "price_asc", "price_desc", "rating_desc"]).default("newest"),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(60).default(12),
+});
+
+function buildPropertyOrderBy(sort: z.infer<typeof propertySearchSchema>["sort"]) {
+  if (sort === "price_asc") return [{ price: "asc" as const }, { createdAt: "desc" as const }];
+  if (sort === "price_desc") return [{ price: "desc" as const }, { createdAt: "desc" as const }];
+  if (sort === "rating_desc") return [{ rating: "desc" as const }, { reviews: "desc" as const }];
+  return [{ createdAt: "desc" as const }];
+}
+
+async function queryProperties(rawQuery: Record<string, unknown>) {
+  const parsed = propertySearchSchema.safeParse(rawQuery);
+  if (!parsed.success) {
+    return { error: "Parâmetros de busca inválidos.", status: 400 as const };
+  }
+
+  const {
+    q,
+    category,
+    city,
+    state,
+    minPrice,
+    maxPrice,
+    guests,
+    minRating,
+    sort,
+    page,
+    limit,
+  } = parsed.data;
+
+  if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
+    return { error: "Preço mínimo não pode ser maior que o máximo.", status: 400 as const };
+  }
+
+  const where = {
+    AND: [
+      q
+        ? {
+            OR: [
+              { title: { contains: q, mode: "insensitive" as const } },
+              { city: { contains: q, mode: "insensitive" as const } },
+              { state: { contains: q, mode: "insensitive" as const } },
+              { description: { contains: q, mode: "insensitive" as const } },
+            ],
+          }
+        : {},
+      category ? { category: { equals: category, mode: "insensitive" as const } } : {},
+      city ? { city: { contains: city, mode: "insensitive" as const } } : {},
+      state ? { state: { contains: state, mode: "insensitive" as const } } : {},
+      minPrice != null ? { price: { gte: minPrice } } : {},
+      maxPrice != null ? { price: { lte: maxPrice } } : {},
+      guests != null ? { guests: { gte: guests } } : {},
+      minRating != null ? { rating: { gte: minRating } } : {},
+    ],
+  };
+
+  const [total, items] = await Promise.all([
+    prisma.property.count({ where }),
+    prisma.property.findMany({
+      where,
+      include: propertyInclude,
+      orderBy: buildPropertyOrderBy(sort),
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+  ]);
+
+  return {
+    total,
+    page,
+    limit,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
+    sort,
+    items,
+  };
+}
+
 app.get("/api/health", (_req, res) =>
   res.json({ status: "ok", service: "stayly-api" })
 );
@@ -147,29 +235,24 @@ app.get("/api/auth/me", auth, async (req: AuthedRequest, res) => {
 });
 
 app.get("/api/properties", async (req, res) => {
-  const q = String(req.query.q || "");
-  const category = String(req.query.category || "");
+  const result = await queryProperties(req.query as Record<string, unknown>);
+  if ("error" in result) {
+    const status = result.status ?? 400;
+    return res.status(status).json({ message: result.error });
+  }
 
-  const properties = await prisma.property.findMany({
-    where: {
-      AND: [
-        q
-          ? {
-              OR: [
-                { title: { contains: q, mode: "insensitive" } },
-                { city: { contains: q, mode: "insensitive" } },
-                { state: { contains: q, mode: "insensitive" } },
-              ],
-            }
-          : {},
-        category ? { category } : {},
-      ],
-    },
-    include: propertyInclude,
-    orderBy: { createdAt: "desc" },
-  });
+  // Keep backward compatibility: existing screens expect a plain list here.
+  res.json(result.items);
+});
 
-  res.json(properties);
+app.get("/api/properties/search", async (req, res) => {
+  const result = await queryProperties(req.query as Record<string, unknown>);
+  if ("error" in result) {
+    const status = result.status ?? 400;
+    return res.status(status).json({ message: result.error });
+  }
+
+  res.json(result);
 });
 
 app.get("/api/properties/:id", async (req, res) => {

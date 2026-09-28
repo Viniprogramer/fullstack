@@ -5,7 +5,13 @@ import {
   Users, ShieldCheck, ArrowRight, Home, Plus, LogOut, Building2,
   CalendarCheck, Trash2, CheckCircle2, AlertCircle, SlidersHorizontal
 } from "lucide-react";
-import { api, type Property, type User as UserType, type Booking } from "./api";
+import {
+  api,
+  type Property,
+  type User as UserType,
+  type Booking,
+  type PropertySearchParams,
+} from "./api";
 
 const money = (n: number) =>
   new Intl.NumberFormat("pt-BR", {
@@ -489,23 +495,56 @@ function Explore() {
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("");
+  const [sort, setSort] = useState<PropertySearchParams["sort"]>("newest");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [guests, setGuests] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [error, setError] = useState("");
+
+  async function fetchProperties(nextPage = 1) {
+    setLoading(true);
+    setError("");
+    try {
+      const result = await api.searchProperties({
+        q,
+        category,
+        sort,
+        page: nextPage,
+        limit: 12,
+        minPrice: minPrice ? Number(minPrice) : undefined,
+        maxPrice: maxPrice ? Number(maxPrice) : undefined,
+        guests: guests ? Number(guests) : undefined,
+      });
+      setProps(result.items);
+      setTotalPages(result.totalPages);
+      setTotal(result.total);
+      setPage(result.page);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Falha ao buscar imóveis.";
+      setProps([]);
+      setTotal(0);
+      setTotalPages(1);
+      setError(message.includes("Failed to fetch")
+        ? "A API de busca está indisponível no momento. Tente novamente em alguns segundos."
+        : message);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setQ(params.get("q") || "");
     setCategory(params.get("category") || "");
-    api
-      .properties(window.location.search)
-      .then(setProps)
-      .catch(() => setProps([]))
-      .finally(() => setLoading(false));
   }, []);
 
-  const filtered = props.filter(
-    (p) =>
-      (p.title + p.city + p.state).toLowerCase().includes(q.toLowerCase()) &&
-      (!category || p.category === category)
-  );
+  useEffect(() => {
+    fetchProperties(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, category, sort]);
 
   return (
     <main className="page">
@@ -513,7 +552,7 @@ function Explore() {
         <div>
           <span className="kicker">EXPLORE</span>
           <h1>Encontre seu próximo destino.</h1>
-          <p>{filtered.length} lugares disponíveis</p>
+          <p>{total} lugares disponíveis</p>
         </div>
         <button className="filter-btn">
           <SlidersHorizontal /> Filtros
@@ -529,22 +568,63 @@ function Explore() {
         />
         <button
           onClick={() => {
-            setLoading(true);
-            api
-              .properties(`?q=${encodeURIComponent(q)}`)
-              .then(setProps)
-              .finally(() => setLoading(false));
+            fetchProperties(1);
           }}
         >
           Buscar
         </button>
       </div>
 
+      <div className="explore-filters">
+        <select value={category} onChange={(e) => setCategory(e.target.value)}>
+          <option value="">Todas categorias</option>
+          <option value="Praia">Praia</option>
+          <option value="Campo">Campo</option>
+          <option value="Urbano">Urbano</option>
+          <option value="Design">Design</option>
+        </select>
+
+        <input
+          type="number"
+          min="0"
+          placeholder="Preço min"
+          value={minPrice}
+          onChange={(e) => setMinPrice(e.target.value)}
+        />
+
+        <input
+          type="number"
+          min="0"
+          placeholder="Preço max"
+          value={maxPrice}
+          onChange={(e) => setMaxPrice(e.target.value)}
+        />
+
+        <input
+          type="number"
+          min="1"
+          placeholder="Hóspedes"
+          value={guests}
+          onChange={(e) => setGuests(e.target.value)}
+        />
+
+        <select value={sort} onChange={(e) => setSort(e.target.value as PropertySearchParams["sort"])}>
+          <option value="newest">Mais recentes</option>
+          <option value="price_asc">Menor preço</option>
+          <option value="price_desc">Maior preço</option>
+          <option value="rating_desc">Melhor avaliação</option>
+        </select>
+
+        <button onClick={() => fetchProperties(1)}>Aplicar</button>
+      </div>
+
+      {error && <div className="error-banner">{error}</div>}
+
       {loading ? (
         <div className="loading">Carregando estadias...</div>
-      ) : filtered.length ? (
+      ) : props.length ? (
         <div className="property-grid">
-          {filtered.map((p) => (
+          {props.map((p) => (
             <PropertyCard key={p.id} property={p} />
           ))}
         </div>
@@ -554,6 +634,16 @@ function Explore() {
           text="Tente outro destino ou remova alguns filtros."
         />
       )}
+
+      <div className="pagination-row">
+        <button disabled={page <= 1 || loading} onClick={() => fetchProperties(page - 1)}>
+          Anterior
+        </button>
+        <span>Página {page} de {totalPages}</span>
+        <button disabled={page >= totalPages || loading} onClick={() => fetchProperties(page + 1)}>
+          Próxima
+        </button>
+      </div>
     </main>
   );
 }

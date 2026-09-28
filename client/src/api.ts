@@ -23,8 +23,43 @@ export type Booking = {
   total: number; status: string; property: Property;
 };
 
+export type PropertySearchParams = {
+  q?: string;
+  category?: string;
+  city?: string;
+  state?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  guests?: number;
+  minRating?: number;
+  sort?: "newest" | "price_asc" | "price_desc" | "rating_desc";
+  page?: number;
+  limit?: number;
+};
+
+export type PropertySearchResponse = {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  sort: "newest" | "price_asc" | "price_desc" | "rating_desc";
+  items: Property[];
+};
+
+function buildQuery(params: PropertySearchParams) {
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") return;
+    search.set(key, String(value));
+  });
+  const query = search.toString();
+  return query ? `?${query}` : "";
+}
+
 export const api = {
   properties: (params = "") => request<Property[]>(`/properties${params}`),
+  searchProperties: (params: PropertySearchParams) =>
+    request<PropertySearchResponse>(`/properties/search${buildQuery(params)}`),
   property: (id: string) => request<Property>(`/properties/${id}`),
   register: (body: object) => request<{token:string;user:User}>("/auth/register",{method:"POST",body:JSON.stringify(body)}),
   login: (body: object) => request<{token:string;user:User}>("/auth/login",{method:"POST",body:JSON.stringify(body)}),
