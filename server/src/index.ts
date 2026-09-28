@@ -83,14 +83,50 @@ const propertySearchSchema = z.object({
   category: z.string().trim().optional(),
   city: z.string().trim().optional(),
   state: z.string().trim().optional(),
+  checkIn: z.string().optional(),
+  checkOut: z.string().optional(),
   minPrice: z.coerce.number().nonnegative().optional(),
   maxPrice: z.coerce.number().nonnegative().optional(),
   guests: z.coerce.number().int().positive().optional(),
   minRating: z.coerce.number().min(0).max(5).optional(),
+  source: z.enum(["local", "real", "hybrid"]).default("hybrid"),
   sort: z.enum(["newest", "price_asc", "price_desc", "rating_desc"]).default("newest"),
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(60).default(12),
 });
+
+type SearchItem = {
+  id: string;
+  title: string;
+  city: string;
+  state: string;
+  country: string;
+  price: number;
+  guests: number;
+  bedrooms: number;
+  beds: number;
+  rating: number;
+  reviews: number;
+  image: string;
+  category: string;
+  description: string;
+  hostId: string;
+  createdAt: Date;
+  host: { id: string; name: string; avatar: string };
+  source: "local" | "real";
+  externalUrl?: string;
+};
+
+type SearchResponse = {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  sort: "newest" | "price_asc" | "price_desc" | "rating_desc";
+  source: "local" | "real" | "hybrid";
+  warnings: string[];
+  items: SearchItem[];
+};
 
 function buildPropertyOrderBy(sort: z.infer<typeof propertySearchSchema>["sort"]) {
   if (sort === "price_asc") return [{ price: "asc" as const }, { createdAt: "desc" as const }];
@@ -110,14 +146,25 @@ async function queryProperties(rawQuery: Record<string, unknown>) {
     category,
     city,
     state,
+    checkIn,
+    checkOut,
     minPrice,
     maxPrice,
     guests,
     minRating,
+    source,
     sort,
     page,
     limit,
   } = parsed.data;
+
+  if (checkIn && checkOut) {
+    const inDate = new Date(checkIn);
+    const outDate = new Date(checkOut);
+    if (!Number.isNaN(inDate.getTime()) && !Number.isNaN(outDate.getTime()) && outDate <= inDate) {
+      return { error: "Checkout deve ser após check-in.", status: 400 as const };
+    }
+  }
 
   if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
     return { error: "Preço mínimo não pode ser maior que o máximo.", status: 400 as const };
@@ -145,7 +192,7 @@ async function queryProperties(rawQuery: Record<string, unknown>) {
     ],
   };
 
-  const [total, items] = await Promise.all([
+  const [localTotal, localItemsRaw] = await Promise.all([
     prisma.property.count({ where }),
     prisma.property.findMany({
       where,
@@ -156,14 +203,141 @@ async function queryProperties(rawQuery: Record<string, unknown>) {
     }),
   ]);
 
-  return {
+  const localItems: SearchItem[] = localItemsRaw.map((item) => ({
+    ...item,
+    source: "local",
+  }));
+
+  const warnings: string[] = [];
+
+  async function fetchRealHotels(): Promise<SearchItem[]> {
+    const locationText = [city, state].filter(Boolean).join(", ") || q;
+    if (!locationText) return [];
+
+    const geoRes = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(locationText)}`,
+      {
+        headers: {
+          "User-Agent": "Stayly/1.0 (contact: viniprogramer)",
+          Accept: "application/json",
+        },
+      }
+    );
+
+    if (!geoRes.ok) {
+      throw new Error("Falha ao localizar cidade para busca real.");
+    }
+
+    const geo = (await geoRes.json()) as Array<{ lat: string; lon: string; display_name: string }>;
+    if (!geo.length) return [];
+
+    const lat = Number(geo[0].lat);
+    const lon = Number(geo[0].lon);
+    const radius = 20000;
+    const maxItems = Math.max(20, page * limit);
+    const overpassQuery = `[out:json][timeout:25];(node["tourism"="hotel"](around:${radius},${lat},${lon});way["tourism"="hotel"](around:${radius},${lat},${lon});relation["tourism"="hotel"](around:${radius},${lat},${lon}););out center ${maxItems};`;
+
+    const overpassRes = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=UTF-8",
+        "User-Agent": "Stayly/1.0 (contact: viniprogramer)",
+      },
+      body: overpassQuery,
+    });
+
+    if (!overpassRes.ok) {
+      throw new Error("Serviço externo de hotéis indisponível.");
+    }
+
+    const overpass = (await overpassRes.json()) as {
+      elements: Array<{
+        id: number;
+        lat?: number;
+        lon?: number;
+        center?: { lat: number; lon: number };
+        tags?: Record<string, string>;
+      }>;
+    };
+
+    const mapped = overpass.elements
+      .map((element, idx) => {
+        const tags = element.tags ?? {};
+        const name = tags.name || tags["name:pt"] || `Hotel ${idx + 1}`;
+        const stars = Number(tags.stars || 4);
+        const rating = Math.max(3.5, Math.min(5, stars + 0.2));
+        const price = Number.isFinite(stars) ? stars * 120 : 480;
+        const lat2 = element.lat ?? element.center?.lat;
+        const lon2 = element.lon ?? element.center?.lon;
+        const mapUrl = lat2 != null && lon2 != null
+          ? `https://www.openstreetmap.org/?mlat=${lat2}&mlon=${lon2}#map=16/${lat2}/${lon2}`
+          : `https://www.openstreetmap.org/search?query=${encodeURIComponent(name)}`;
+
+        return {
+          id: `real-${element.id}`,
+          title: name,
+          city: city || q || "Cidade",
+          state: state || "",
+          country: "Brasil",
+          price,
+          guests: guests ?? 2,
+          bedrooms: 1,
+          beds: 1,
+          rating,
+          reviews: 0,
+          image: `https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1000&q=85`,
+          category: "Hotel",
+          description: tags["addr:street"]
+            ? `Hotel em ${tags["addr:street"]}. Resultado de provedor externo em tempo real.`
+            : "Resultado de provedor externo em tempo real.",
+          hostId: "external-provider",
+          createdAt: new Date(),
+          host: {
+            id: "external-provider",
+            name: "External Provider",
+            avatar: "https://i.pravatar.cc/150?img=48",
+          },
+          source: "real" as const,
+          externalUrl: mapUrl,
+        };
+      })
+      .filter((item) => item.title);
+
+    const offset = (page - 1) * limit;
+    return mapped.slice(offset, offset + limit);
+  }
+
+  let realItems: SearchItem[] = [];
+
+  if (source !== "local") {
+    try {
+      realItems = await fetchRealHotels();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Falha na busca externa.";
+      warnings.push(message);
+    }
+  }
+
+  const items = source === "real"
+    ? realItems
+    : source === "hybrid"
+      ? [...realItems, ...localItems]
+      : localItems;
+
+  const total = source === "real" ? realItems.length : source === "hybrid" ? realItems.length + localTotal : localTotal;
+
+  const response: SearchResponse = {
     total,
     page,
     limit,
     totalPages: Math.max(1, Math.ceil(total / limit)),
     sort,
+    source,
+    warnings,
     items,
   };
+
+  return response;
 }
 
 app.get("/api/health", (_req, res) =>

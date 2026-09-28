@@ -16,6 +16,8 @@ export type Property = {
   price: number; guests: number; bedrooms: number; beds: number;
   rating: number; reviews: number; image: string; category: string;
   description: string; host: { id: string; name: string; avatar: string };
+  source?: "local" | "real";
+  externalUrl?: string;
 };
 
 export type Booking = {
@@ -28,10 +30,13 @@ export type PropertySearchParams = {
   category?: string;
   city?: string;
   state?: string;
+  checkIn?: string;
+  checkOut?: string;
   minPrice?: number;
   maxPrice?: number;
   guests?: number;
   minRating?: number;
+  source?: "local" | "real" | "hybrid";
   sort?: "newest" | "price_asc" | "price_desc" | "rating_desc";
   page?: number;
   limit?: number;
@@ -42,6 +47,8 @@ export type PropertySearchResponse = {
   page: number;
   limit: number;
   totalPages: number;
+  source: "local" | "real" | "hybrid";
+  warnings: string[];
   sort: "newest" | "price_asc" | "price_desc" | "rating_desc";
   items: Property[];
 };

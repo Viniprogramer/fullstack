@@ -499,18 +499,26 @@ function Explore() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [guests, setGuests] = useState("");
+  const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
+  const [source, setSource] = useState<PropertySearchParams["source"]>("hybrid");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [error, setError] = useState("");
+  const [warnings, setWarnings] = useState<string[]>([]);
 
   async function fetchProperties(nextPage = 1) {
     setLoading(true);
     setError("");
+    setWarnings([]);
     try {
       const result = await api.searchProperties({
         q,
         category,
+        source,
+        checkIn: checkIn || undefined,
+        checkOut: checkOut || undefined,
         sort,
         page: nextPage,
         limit: 12,
@@ -522,6 +530,7 @@ function Explore() {
       setTotalPages(result.totalPages);
       setTotal(result.total);
       setPage(result.page);
+      setWarnings(result.warnings || []);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Falha ao buscar imóveis.";
       setProps([]);
@@ -544,7 +553,7 @@ function Explore() {
   useEffect(() => {
     fetchProperties(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, category, sort]);
+  }, [q, category, sort, source]);
 
   return (
     <main className="page">
@@ -576,6 +585,12 @@ function Explore() {
       </div>
 
       <div className="explore-filters">
+        <select value={source} onChange={(e) => setSource(e.target.value as PropertySearchParams["source"])}>
+          <option value="hybrid">Busca híbrida (real + local)</option>
+          <option value="real">Somente hotéis reais</option>
+          <option value="local">Somente catálogo local</option>
+        </select>
+
         <select value={category} onChange={(e) => setCategory(e.target.value)}>
           <option value="">Todas categorias</option>
           <option value="Praia">Praia</option>
@@ -608,6 +623,18 @@ function Explore() {
           onChange={(e) => setGuests(e.target.value)}
         />
 
+        <input
+          type="date"
+          value={checkIn}
+          onChange={(e) => setCheckIn(e.target.value)}
+        />
+
+        <input
+          type="date"
+          value={checkOut}
+          onChange={(e) => setCheckOut(e.target.value)}
+        />
+
         <select value={sort} onChange={(e) => setSort(e.target.value as PropertySearchParams["sort"])}>
           <option value="newest">Mais recentes</option>
           <option value="price_asc">Menor preço</option>
@@ -619,6 +646,13 @@ function Explore() {
       </div>
 
       {error && <div className="error-banner">{error}</div>}
+      {!!warnings.length && (
+        <div className="warn-banner">
+          {warnings.map((warning) => (
+            <p key={warning}>{warning}</p>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="loading">Carregando estadias...</div>
@@ -669,19 +703,24 @@ function PropertyCard({ property }: { property: Property }) {
     }
   }
 
-  return (
-    <Link className="property-card" to={`/imovel/${property.id}`}>
+  const isReal = property.source === "real";
+
+  const cardContent = (
+    <>
       <div className="image-wrap">
         <img src={property.image} alt={property.title} />
-        <button
-          onClick={favorite}
-          disabled={busy}
-          className={fav ? "liked" : ""}
-          aria-label="Favoritar imóvel"
-        >
-          {fav ? <Heart fill="currentColor" /> : <Heart />}
-        </button>
+        {!isReal && (
+          <button
+            onClick={favorite}
+            disabled={busy}
+            className={fav ? "liked" : ""}
+            aria-label="Favoritar imóvel"
+          >
+            {fav ? <Heart fill="currentColor" /> : <Heart />}
+          </button>
+        )}
         <span className="category">{property.category}</span>
+        {isReal && <span className="source-chip">Real</span>}
       </div>
 
       <div className="property-info">
@@ -700,9 +739,30 @@ function PropertyCard({ property }: { property: Property }) {
           <span>
             A partir de <strong>{money(property.price)}</strong> / noite
           </span>
-          <small>{property.reviews} avaliações</small>
+          <small>
+            {isReal ? "Fornecedor externo" : `${property.reviews} avaliações`}
+          </small>
         </div>
       </div>
+    </>
+  );
+
+  if (isReal) {
+    return (
+      <a
+        className="property-card"
+        href={property.externalUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${property.title} ${property.city}`)}`}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {cardContent}
+      </a>
+    );
+  }
+
+  return (
+    <Link className="property-card" to={`/imovel/${property.id}`}>
+      {cardContent}
     </Link>
   );
 }

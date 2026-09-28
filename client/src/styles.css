@@ -37,6 +37,32 @@
 	font-size: 14px;
 }
 
+.warn-banner {
+	margin: 8px 0 18px;
+	border: 1px solid #f0e2b5;
+	background: #fff9e8;
+	color: #815907;
+	border-radius: 12px;
+	padding: 10px 12px;
+	font-size: 14px;
+}
+
+.warn-banner p {
+	margin: 0;
+}
+
+.source-chip {
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	font-size: 11px;
+	font-weight: 700;
+	padding: 4px 8px;
+	border-radius: 999px;
+	background: #0f3d2f;
+	color: #fff;
+}
+
 .pagination-row {
 	margin-top: 18px;
 	display: flex;
