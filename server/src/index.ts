@@ -7,7 +7,7 @@ import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 
 const prisma = new PrismaClient();
-const app = express();
+export const app = express();
 const PORT = Number(process.env.PORT || 4000);
 const SECRET = process.env.JWT_SECRET || "stayly-dev-secret";
 
@@ -505,6 +505,8 @@ app.use((err: any, _req: any, res: express.Response, _next: any) => {
   res.status(500).json({ message: "Erro interno da API." });
 });
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Stayly API running on port ${PORT}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Stayly API running on port ${PORT}`);
+  });
+}
