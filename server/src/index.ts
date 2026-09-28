@@ -280,7 +280,7 @@ app.get("/api/favorites", auth, async (req: AuthedRequest, res) => {
     },
   });
 
-  res.json(f.map((x) => x.property));
+  res.json(f.map((x: { property: unknown }) => x.property));
 });
 
 app.post("/api/favorites/:id", auth, async (req: AuthedRequest, res) => {
