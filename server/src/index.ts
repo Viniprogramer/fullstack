@@ -134,6 +134,51 @@ const externalHotelHost = {
   avatar: "https://i.pravatar.cc/150?img=48",
 };
 
+const REAL_HOTEL_IMAGES = [
+  "https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=1000&q=85",
+  "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1000&q=85",
+  "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1000&q=85",
+  "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=1000&q=85",
+  "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1000&q=85",
+  "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1000&q=85",
+  "https://images.unsplash.com/photo-1455587734955-081b22074882?auto=format&fit=crop&w=1000&q=85",
+  "https://images.unsplash.com/photo-1489710437720-ebb67ec84dd2?auto=format&fit=crop&w=1000&q=85",
+];
+
+let externalHostIdPromise: Promise<string> | null = null;
+
+function pickRealHotelImage(seed: string) {
+  const hash = Array.from(seed).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return REAL_HOTEL_IMAGES[hash % REAL_HOTEL_IMAGES.length];
+}
+
+async function ensureExternalHostId() {
+  if (!externalHostIdPromise) {
+    externalHostIdPromise = (async () => {
+      const password = await bcrypt.hash(`external-provider-${SECRET}`, 10);
+      const host = await prisma.user.upsert({
+        where: { email: "external-provider@stayly.system" },
+        update: {
+          name: "Stayly External Hotels",
+          avatar: externalHotelHost.avatar,
+          role: "HOST",
+          password,
+        },
+        create: {
+          name: "Stayly External Hotels",
+          email: "external-provider@stayly.system",
+          avatar: externalHotelHost.avatar,
+          role: "HOST",
+          password,
+        },
+      });
+      return host.id;
+    })();
+  }
+
+  return externalHostIdPromise;
+}
+
 function buildPropertyOrderBy(sort: z.infer<typeof propertySearchSchema>["sort"]) {
   if (sort === "price_asc") return [{ price: "asc" as const }, { createdAt: "desc" as const }];
   if (sort === "price_desc") return [{ price: "desc" as const }, { createdAt: "desc" as const }];
@@ -287,7 +332,7 @@ async function queryProperties(rawQuery: Record<string, unknown>) {
           : `https://www.openstreetmap.org/search?query=${encodeURIComponent(place.name || "hotel")}`;
 
         return {
-          id: `real-otm-${place.xid}-${idx}`,
+          id: `real-otm-${place.xid}`,
           title: place.name || `Hotel ${idx + 1}`,
           city: city || q || "Cidade",
           state: state || "",
@@ -298,7 +343,7 @@ async function queryProperties(rawQuery: Record<string, unknown>) {
           beds: 1,
           rating,
           reviews: 0,
-          image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1000&q=85",
+          image: pickRealHotelImage(place.xid || `${idx}`),
           category: "Hotel",
           description: "Resultado de provedor externo em tempo real (OpenTripMap).",
           hostId: externalHotelHost.id,
@@ -360,7 +405,7 @@ async function queryProperties(rawQuery: Record<string, unknown>) {
           : `https://www.openstreetmap.org/search?query=${encodeURIComponent(name)}`;
 
         return {
-          id: `real-${element.id}`,
+          id: `real-osm-${element.id}`,
           title: name,
           city: city || q || "Cidade",
           state: state || "",
@@ -371,7 +416,7 @@ async function queryProperties(rawQuery: Record<string, unknown>) {
           beds: 1,
           rating,
           reviews: 0,
-          image: `https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1000&q=85`,
+          image: pickRealHotelImage(String(element.id)),
           category: "Hotel",
           description: tags["addr:street"]
             ? `Hotel em ${tags["addr:street"]}. Resultado de provedor externo em tempo real.`
@@ -390,6 +435,61 @@ async function queryProperties(rawQuery: Record<string, unknown>) {
 
   let realItems: SearchItem[] = [];
 
+  async function persistExternalItems(items: SearchItem[]) {
+    if (!items.length) return [] as SearchItem[];
+    const hostId = await ensureExternalHostId();
+
+    const stored = await Promise.all(
+      items.map((item) =>
+        prisma.property.upsert({
+          where: { id: item.id },
+          update: {
+            title: item.title,
+            city: item.city,
+            state: item.state || "N/A",
+            country: item.country || "Brasil",
+            price: item.price,
+            guests: item.guests,
+            bedrooms: item.bedrooms,
+            beds: item.beds,
+            rating: item.rating,
+            reviews: item.reviews,
+            image: item.image,
+            category: item.category,
+            description: item.description,
+            hostId,
+          },
+          create: {
+            id: item.id,
+            title: item.title,
+            city: item.city,
+            state: item.state || "N/A",
+            country: item.country || "Brasil",
+            price: item.price,
+            guests: item.guests,
+            bedrooms: item.bedrooms,
+            beds: item.beds,
+            rating: item.rating,
+            reviews: item.reviews,
+            image: item.image,
+            category: item.category,
+            description: item.description,
+            hostId,
+          },
+          include: propertyInclude,
+        })
+      )
+    );
+
+    const urlById = new Map(items.map((item) => [item.id, item.externalUrl]));
+
+    return stored.map((item) => ({
+      ...item,
+      source: "real" as const,
+      externalUrl: urlById.get(item.id),
+    }));
+  }
+
   if (source !== "local") {
     try {
       if (process.env.OPENTRIPMAP_API_KEY) {
@@ -398,12 +498,15 @@ async function queryProperties(rawQuery: Record<string, unknown>) {
         warnings.push("Configure OPENTRIPMAP_API_KEY para resultados reais mais estáveis.");
         realItems = await fetchRealHotels();
       }
+
+      realItems = await persistExternalItems(realItems);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Falha na busca externa.";
       warnings.push(message);
       if (!realItems.length) {
         try {
           realItems = await fetchRealHotels();
+          realItems = await persistExternalItems(realItems);
         } catch {
           // Fallback final é mantido apenas com catálogo local.
         }

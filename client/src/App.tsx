@@ -709,16 +709,15 @@ function PropertyCard({ property }: { property: Property }) {
     <>
       <div className="image-wrap">
         <img src={property.image} alt={property.title} />
-        {!isReal && (
-          <button
-            onClick={favorite}
-            disabled={busy}
-            className={fav ? "liked" : ""}
-            aria-label="Favoritar imóvel"
-          >
-            {fav ? <Heart fill="currentColor" /> : <Heart />}
-          </button>
-        )}
+        <button
+          onClick={favorite}
+          disabled={busy || isReal}
+          className={fav ? "liked" : ""}
+          aria-label="Favoritar imóvel"
+          title={isReal ? "Resultados externos não podem ser favoritados" : "Favoritar imóvel"}
+        >
+          {fav ? <Heart fill="currentColor" /> : <Heart />}
+        </button>
         <span className="category">{property.category}</span>
         {isReal && <span className="source-chip">Real</span>}
       </div>
@@ -739,26 +738,11 @@ function PropertyCard({ property }: { property: Property }) {
           <span>
             A partir de <strong>{money(property.price)}</strong> / noite
           </span>
-          <small>
-            {isReal ? "Fornecedor externo" : `${property.reviews} avaliações`}
-          </small>
+          <small>{isReal ? "Integração externa" : `${property.reviews} avaliações`}</small>
         </div>
       </div>
     </>
   );
-
-  if (isReal) {
-    return (
-      <a
-        className="property-card"
-        href={property.externalUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${property.title} ${property.city}`)}`}
-        target="_blank"
-        rel="noreferrer"
-      >
-        {cardContent}
-      </a>
-    );
-  }
 
   return (
     <Link className="property-card" to={`/imovel/${property.id}`}>
